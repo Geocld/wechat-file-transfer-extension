@@ -6,6 +6,15 @@ document.addEventListener('DOMContentLoaded', function () {
     
     sendResponse('received ok, request:', request)
 
+    if (request.getChatList) {
+      injectScript(chrome.extension.getURL('chrome/catchList.js'), 'body')
+      window.addEventListener('message', function(e) {
+        // console.log('收到了来自inject script的信息:')
+        // console.log(e.data.data)
+        chrome.runtime.sendMessage({chatList: e.data.data});
+    }, false);
+    }
+
     if (request.sendMessage) {
       injectScript(chrome.extension.getURL('chrome/sendMessage.js'), 'body', { message: request.message })
     }

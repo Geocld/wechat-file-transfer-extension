@@ -27,6 +27,7 @@
   "homepage_url": "https://github.com/Geocld/wechat-file-transfer-extension",
   "web_accessible_resources": [
     "chrome/sendMessage.js",
-    "chrome/sendFile.js"
+    "chrome/sendFile.js",
+    "chrome/catchList.js"
   ]
 }
