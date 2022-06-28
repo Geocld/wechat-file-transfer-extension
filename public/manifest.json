@@ -1,0 +1,32 @@
+{
+  "name": "微信文件传输",
+  "manifest_version": 2,
+  "version": "1.0.0",
+  "description": "更便捷的微信文件传输，可直接通过小窗口传输文件。",
+  "icons": {
+    "20": "images/20.png",
+    "19": "images/20.png",
+    "30": "images/20.png",
+    "48": "images/20.png",
+    "128": "images/20.png"
+  },
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "browser_action": {
+    "default_icon": "images/20.png",
+    "default_title": "欢迎使用微信文件传输扩展",
+    "default_popup": "index.html"
+  },
+  "content_scripts": [{
+    "js": [ "chrome/wxobserve.js" ],
+    "matches": [ "*://filehelper.weixin.qq.com/*" ],
+    "run_at": "document_start"
+  }],
+  "permissions": ["tabs", "https://filehelper.weixin.qq.com/*"],
+  "homepage_url": "https://github.com/Geocld/wechat-file-transfer-extension",
+  "web_accessible_resources": [
+    "chrome/sendMessage.js",
+    "chrome/sendFile.js"
+  ]
+}
