@@ -5,7 +5,33 @@
   let isLogin = false;
   let hasOpenWx = false;
   let message = "";
-  let chatList = [];
+  let chatList = [
+    // {
+    //   text: 'hello world',
+    //   type: 'text',
+    //   img: '',
+    //   fileTitle: '',
+    //   fileDesc: '',
+    //   canDownload: false
+    // },
+    // {
+    //   text: '',
+    //   type: 'file',
+    //   img: '',
+    //   fileTitle: 'File Name',
+    //   fileDesc: '123.4KB',
+    //   canDownload: false
+    // },
+    // {
+    //   text: '',
+    //   type: 'image',
+    //   // img: 'https://filehelper.weixin.qq.com/cgi-bin/mmwebwx-bin/webwxgetmsgimg??&MsgID=213400715783068973&skey=@crypt_76b14cd8_629136b3f44a31a7039c6e098d7bc9a2&type=slave&mmweb_appid=wx_webfilehelper',
+    //   img: 'https://svelte.dev/stopwar.svg',
+    //   fileTitle: '',
+    //   fileDesc: '',
+    //   canDownload: false
+    // }
+  ];
 
   const viewPage = () => {
     let windowId = null;
@@ -165,15 +191,31 @@
       <div class="chat-header">文件传输助手</div>
 
       <div class="chat-body">
-        {#each chatList as { type, text, img, fileDesc, filetitle } }
+        {#each chatList as { type, text, img, fileTitle, fileDesc  } }
           {#if type === 'text'}
-            <div>{ text }</div>
+            <div class="msg-content">
+              <div class="msg-text">{ text }</div>
+            </div>
           {:else if type === 'image'}
-            <div><img src={img} alt=""></div>
+            <div class="msg-content">
+              <div class="msg-image"><img src={img} alt=""></div>
+            </div>
           {:else if type === 'file'}
-            <div><span>{ filetitle }</span> <span>{ fileDesc }</span></div>
+            <div class="msg-content">
+              <div class="msg-file">
+                <div class="file-icon">
+                  <img src="/images/txt.png" alt="">
+                </div>
+                <div class="file-content">
+                  <p class="file-title">{ fileTitle }</p>
+                  <p class="file-desc">{ fileDesc }</p>
+                </div>
+              </div>
+            </div>
           {:else}
-            <div>{ text }</div>
+            <div class="msg-content">
+              <div class="msg-text">{ text }</div>
+            </div>
           {/if}
           
         {/each}
@@ -243,6 +285,48 @@
     height: 70%;
     overflow-y: auto;
   }
+  .msg-content {
+    display: flex;
+    font-size: 14px;
+  }
+  .msg-text, .msg-file {
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: row-reverse;
+    margin: 10px;
+  }
+  .msg-text {
+    display: block;
+    max-width: 150px;
+    text-align: left;
+    word-break: break-all;
+    background: #95ec69;
+  }
+  .msg-file {
+    background: #fff;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 65px;
+    width: 148px;
+    cursor: pointer;
+  }
+  .file-icon img {
+    width: 40px;
+    height: 40px;
+  }
+  .file-desc {
+    margin-top: 4px;
+    font-size: 12px;
+    color: #999;
+  }
+  .msg-image {
+    flex: 1;
+  }
+  .msg-image img {
+    max-width: 50%;
+  }
+  
   .chat-footer {
     border-top: 1px solid #e3e4e5;
     display: flex;

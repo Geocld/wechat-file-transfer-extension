@@ -14,7 +14,7 @@ function catchList() {
       if (className === 'msg-file') {
         type = 'file'
         fileTitle = firstNode.querySelector('.msg-file__title').textContent
-        fileSize = firstNode.querySelector('.msg-file__desc').textContent
+        fileDesc = firstNode.querySelector('.msg-file__desc').textContent
       } else if (className === 'msg-text') {
         type = 'text'
         text = firstNode.textContent
@@ -33,7 +33,7 @@ function catchList() {
       })
     }
   }
-  
+
   // send message to content script
   window.postMessage({ "data": list }, '*');
 }
