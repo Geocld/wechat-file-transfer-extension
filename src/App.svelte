@@ -1,239 +1,215 @@
 <script>
   // @ts-nocheck
-  import { onMount } from "svelte";
+  import { onMount } from 'svelte'
 
-  let isLogin = false;
-  let hasOpenWx = false;
-  let message = "";
-  let chatList = [
-    // {
-    //   text: 'hello world',
-    //   type: 'text',
-    //   img: '',
-    //   fileTitle: '',
-    //   fileDesc: '',
-    //   canDownload: false
-    // },
-    // {
-    //   text: '',
-    //   type: 'file',
-    //   img: '',
-    //   fileTitle: 'File Name',
-    //   fileDesc: '123.4KB',
-    //   canDownload: false
-    // },
-    // {
-    //   text: '',
-    //   type: 'image',
-    //   // img: 'https://filehelper.weixin.qq.com/cgi-bin/mmwebwx-bin/webwxgetmsgimg??&MsgID=213400715783068973&skey=@crypt_76b14cd8_629136b3f44a31a7039c6e098d7bc9a2&type=slave&mmweb_appid=wx_webfilehelper',
-    //   img: 'https://svelte.dev/stopwar.svg',
-    //   fileTitle: '',
-    //   fileDesc: '',
-    //   canDownload: false
-    // }
-  ];
+  let isLogin = false
+  let hasOpenWx = false
+  let message = ''
+  let showMore = false
+  let isSending = false
+  let chatList = []
 
   const viewPage = () => {
-    let windowId = null;
+    let windowId = null
     chrome.windows.getAll(
       {
-        populate: true,
+        populate: true
       },
       function (windows) {
         windows.forEach(function (win) {
           if (win.tabs.length) {
             win.tabs.forEach(function (tab) {
               if (/filehelper\.weixin\.qq\.com/gi.test(tab.url)) {
-                windowId = tab.windowId;
+                windowId = tab.windowId
               }
-            });
+            })
           }
-        });
+        })
 
         if (windowId) {
-          chrome.windows.update(windowId, { focused: true });
-          window.close();
+          chrome.windows.update(windowId, { focused: true })
+          window.close()
         } else {
           chrome.windows.create(
             {
-              url: "https://filehelper.weixin.qq.com",
-              type: "popup",
-              focused: true,
+              url: 'https://filehelper.weixin.qq.com',
+              type: 'popup',
+              focused: true
             },
             function (w) {
-              console.log(w);
-              window.close();
+              console.log(w)
+              window.close()
             }
-          );
+          )
         }
       }
-    );
-  };
+    )
+  }
+
+  function callTabAndSendMessage(params, callback) {
+    chrome.windows.getAll(
+      {
+        populate: true
+      },
+      wins => {
+        wins.forEach(win => {
+          win.tabs.forEach(tab => {
+            if (/filehelper\.weixin\.qq\.com/gi.test(tab.url)) {
+              chrome.tabs.sendMessage(tab.id, { ...params }, function (response) {
+                console.log(response)
+                console.log('message has send to wxobserve.js')
+                callback && callback()
+              })
+            }
+          })
+        })
+      }
+    )
+  }
+
+  function callTabAndExecuteScript(file, callback) {
+    chrome.windows.getAll(
+      {
+        populate: true
+      },
+      wins => {
+        wins.forEach(win => {
+          win.tabs.forEach(tab => {
+            if (/filehelper\.weixin\.qq\.com/gi.test(tab.url)) {
+              hasOpenWx = true // already open wx
+              chrome.tabs.executeScript(
+                tab.id,
+                {
+                  file
+                },
+                res => {
+                  callback(res)
+                }
+              )
+            }
+          })
+        })
+      }
+    )
+  }
 
   const sendMessage = () => {
-    if (!message.length) {
-      return false;
+    if (!message.length || isSending) {
+      return false
     }
-    chrome.windows.getAll(
-      {
-        populate: true,
-      },
-      (wins) => {
-        wins.forEach((win) => {
-          win.tabs.forEach((tab) => {
-            if (/filehelper\.weixin\.qq\.com/gi.test(tab.url)) {
-              chrome.tabs.sendMessage(
-                tab.id,
-                { sendMessage: true, message },
-                function (response) {
-                  console.log(response);
-                  console.log("message has send to wxobserve.js");
-                  message = "";
-                }
-              );
-            }
-          });
-        });
-      }
-    );
-  };
+    isSending = true
+    callTabAndSendMessage({ sendMessage: true, message }, () => {
+      isSending = false
+      message = ''
+    })
+  }
 
   const sendFile = () => {
-    chrome.windows.getAll(
-      {
-        populate: true,
-      },
-      (wins) => {
-        wins.forEach((win) => {
-          win.tabs.forEach((tab) => {
-            if (/filehelper\.weixin\.qq\.com/gi.test(tab.url)) {
-              chrome.tabs.sendMessage(
-                tab.id,
-                { sendFile: true },
-                function (response) {
-                  console.log("message has send to wxobserve.js");
-                }
-              );
-            }
-          });
-        });
-      }
-    );
-  };
+    callTabAndSendMessage({ sendFile: true })
+  }
 
   const checkLogin = () => {
-    return new Promise((resolve) => {
-      chrome.windows.getAll(
-        {
-          populate: true,
-        },
-        (wins) => {
-          wins.forEach((win) => {
-            win.tabs.forEach((tab) => {
-              if (/filehelper\.weixin\.qq\.com/gi.test(tab.url)) {
-                hasOpenWx = true; // already open wx
-                chrome.tabs.executeScript(
-                  tab.id,
-                  {
-                    file: "chrome/wxInfo.js",
-                  },
-                  (res) => {
-                    const info = res[0];
-                    isLogin = info.isLogin;
-                    resolve(isLogin);
-                  }
-                );
-              }
-            });
-          });
-        }
-      );
-    });
-  };
+    return new Promise(resolve => {
+      callTabAndExecuteScript('chrome/wxInfo.js', res => {
+        const info = res[0]
+        isLogin = info.isLogin
+        resolve(isLogin)
+      })
+    })
+  }
+
+  const handleMore = () => {
+    showMore = !showMore
+  }
+
+  const logout = () => {
+    callTabAndSendMessage({ logout: true })
+    window.close()
+  }
 
   onMount(async () => {
-    const login = await checkLogin();
+    const login = await checkLogin()
     if (login) {
-      console.log("catchList");
-      
-      // 监听content script那边发送过来的数据（聊天列表）
-      chrome.runtime.onMessage.addListener((request) => {
-        chatList = request.chatList
-      });
+      console.log('catchList')
 
-      chrome.windows.getAll(
-        {
-          populate: true,
-        },
-        (wins) => {
-          wins.forEach((win) => {
-            win.tabs.forEach((tab) => {
-              if (/filehelper\.weixin\.qq\.com/gi.test(tab.url)) {
-                chrome.tabs.sendMessage(
-                  tab.id,
-                  { getChatList: true },
-                  function (response) {
-                    console.log("message has send to wxobserve.js");
-                  }
-                );
-              }
-            });
-          });
-        }
-      );
+      // 监听content script那边发送过来的数据（聊天列表）
+      chrome.runtime.onMessage.addListener(request => {
+        chatList = request.chatList
+      })
+
+      callTabAndSendMessage({ getChatList: true })
     }
-  });
+  })
 </script>
 
 <main class="wrap">
   {#if isLogin}
     <div class="chat-panel">
-      <div class="chat-header">文件传输助手</div>
+      <div class="chat-header">
+        <div class="header-title">文件传输助手</div>
+
+        <span class="more">
+          <img src="/images/dot.svg" alt="" on:click={handleMore} />
+        </span>
+
+        {#if showMore}
+          <div class="more-popup">
+            <div class="more-popup-item" on:click={viewPage}>进入网页版</div>
+
+            {#if isLogin}
+              <div class="more-popup-item" on:click={logout}>退出</div>
+            {/if}
+          </div>
+        {/if}
+      </div>
 
       <div class="chat-body">
-        {#each chatList as { type, text, img, fileTitle, fileDesc  } }
+        {#each chatList as { type, text, img, fileTitle, fileDesc }}
           {#if type === 'text'}
             <div class="msg-content">
-              <div class="msg-text">{ text }</div>
+              <div class="msg-text">{text}</div>
             </div>
           {:else if type === 'image'}
             <div class="msg-content">
-              <div class="msg-image"><img src={img} alt=""></div>
+              <div class="msg-image"><img src={img} alt="" /></div>
             </div>
           {:else if type === 'file'}
             <div class="msg-content">
               <div class="msg-file">
                 <div class="file-icon">
-                  <img src="/images/txt.png" alt="">
+                  <img src="/images/txt.png" alt="" />
                 </div>
                 <div class="file-content">
-                  <p class="file-title">{ fileTitle }</p>
-                  <p class="file-desc">{ fileDesc }</p>
+                  <p class="file-title">{fileTitle}</p>
+                  <p class="file-desc">{fileDesc}</p>
                 </div>
               </div>
             </div>
           {:else}
             <div class="msg-content">
-              <div class="msg-text">{ text }</div>
+              <div class="msg-text">{text}</div>
             </div>
           {/if}
-          
         {/each}
       </div>
 
       <div class="chat-footer">
         <div class="operations">
-          <span class="icon-file" on:click={sendFile}></span>
+          <span class="icon-file" on:click={sendFile} />
         </div>
         <textarea class="chat-input" bind:value={message} />
         <div class="input-send">
-          <span class="btn { message.length ? '' : 'btn-disabled' }" on:click={sendMessage}>发送</span>
+          <span class="btn {message.length || !isSending ? '' : 'btn-disabled'}" on:click={sendMessage}>
+            {isSending ? '发送中...' : '发送'}
+          </span>
         </div>
       </div>
     </div>
   {:else}
-    <div class="chat-header">欢迎使用微信文件传输助手</div>
-    <img src="/images/cover.jpeg" alt="" style="width: 100%; vertical-align: top;">
+    <div class="chat-header">
+      <div class="header-title">文件传输助手</div>
+    </div>
+    <img src="/images/cover.jpeg" alt="" style="width: 100%; vertical-align: top;" />
     <span class="btn btn-block" on:click={viewPage}>登录</span>
   {/if}
 </main>
@@ -246,7 +222,7 @@
     background: #f9f9f9;
   }
   .btn {
-    background-color: rgba(0,0,0,.05);
+    background-color: rgba(0, 0, 0, 0.05);
     border-radius: 4px;
     box-sizing: border-box;
     color: #07c160;
@@ -259,7 +235,7 @@
     cursor: pointer;
   }
   .btn-disabled {
-    background-color: rgba(0,0,0,.08);
+    background-color: rgba(0, 0, 0, 0.08);
     color: #999;
   }
   .btn-block {
@@ -272,12 +248,39 @@
     height: 500px;
   }
   .chat-header {
-    padding: 0 8px;
+    position: relative;
     border-bottom: 1px solid #e3e4e5;
+  }
+  .header-title {
+    padding: 0 8px;
     color: #191919;
     height: 30px;
     line-height: 30px;
     font-weight: bold;
+  }
+  .more {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+  }
+  .more img {
+    width: 100%;
+    vertical-align: top;
+    cursor: pointer;
+  }
+  .more-popup {
+    position: absolute;
+    z-index: 999;
+    top: 28px;
+    right: 10px;
+    background: #fff;
+    border-radius: 5px;
+    padding: 0 10px;
+  }
+  .more-popup-item {
+    cursor: pointer;
+    font-size: 13px;
+    padding: 5px 0;
   }
   .chat-body {
     flex: 1;
@@ -289,7 +292,8 @@
     display: flex;
     font-size: 14px;
   }
-  .msg-text, .msg-file {
+  .msg-text,
+  .msg-file {
     padding: 4px 8px;
     border-radius: 4px;
     display: flex;
@@ -298,10 +302,11 @@
   }
   .msg-text {
     display: block;
-    max-width: 150px;
+    max-width: 250px;
     text-align: left;
     word-break: break-all;
     background: #95ec69;
+    line-height: 1.5;
   }
   .msg-file {
     background: #fff;
@@ -326,7 +331,7 @@
   .msg-image img {
     max-width: 50%;
   }
-  
+
   .chat-footer {
     border-top: 1px solid #e3e4e5;
     display: flex;
@@ -338,7 +343,7 @@
     padding: 10px 16px;
   }
   .icon-file {
-    background: url('/images/icon__file.svg') no-repeat 50%/contain;
+    background: url('/images/icon__file.svg') no-repeat 50% / contain;
     height: 15px;
     width: 17px;
     cursor: pointer;

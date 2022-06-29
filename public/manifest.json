@@ -2,7 +2,7 @@
   "name": "微信文件传输",
   "manifest_version": 2,
   "version": "1.0.0",
-  "description": "更便捷的微信文件传输，可直接通过小窗口传输文件。",
+  "description": "更便捷的微信文件传输，可直接通过小窗口传输文件，让网页版更好用！",
   "icons": {
     "20": "images/20.png",
     "19": "images/20.png",
@@ -28,6 +28,7 @@
   "web_accessible_resources": [
     "chrome/sendMessage.js",
     "chrome/sendFile.js",
-    "chrome/catchList.js"
+    "chrome/catchList.js",
+    "chrome/logout.js"
   ]
 }

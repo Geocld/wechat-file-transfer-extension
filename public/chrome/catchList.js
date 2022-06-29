@@ -35,7 +35,7 @@ function catchList() {
   }
 
   // send message to content script
-  window.postMessage({ "data": list }, '*');
+  window.postMessage({ data: list }, '*')
 }
 
 catchList()
