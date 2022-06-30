@@ -1,4 +1,7 @@
 .vscode
+*.zip
+*.rar
+*.tar.gz
 # Logs
 logs
 *.log

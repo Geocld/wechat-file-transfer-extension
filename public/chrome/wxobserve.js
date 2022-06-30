@@ -1,21 +1,33 @@
 function getMessages() {
-  injectScript(chrome.extension.getURL('chrome/catchList.js'), 'body')
-  window.addEventListener(
-    'message',
-    function (e) {
-      // console.log('收到了来自inject script的信息:')
-      // console.log(e.data.data)
-      chrome.runtime.sendMessage({ chatList: e.data.data })
-    },
-    false
-  )
+  injectScript(chrome.runtime.getURL('chrome/catchList.js'), 'body')
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-    // console.log('received:')
-    // console.log(request, sender, sendResponse)
 
+  window.addEventListener(
+    'message',
+    function (e) {
+      console.log('收到了来自inject script的信息:')
+      console.log(e.data)
+      
+      if (e.data.chatList) {
+        chrome.runtime.sendMessage({ chatList: e.data.chatList })
+      }
+
+      if (e.data.updateChatList) {
+        getMessages()
+      }
+      
+    },
+    false
+  )
+
+  chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+    console.log('received:')
+    console.log(request, sender, sendResponse)
+
+    // must have sendResponse, otherwise get error: 
+    // the message port closed before a response was received. chrome extension
     sendResponse('received ok, request:', request)
 
     if (request.getChatList) {
@@ -23,45 +35,17 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     if (request.sendMessage) {
-      injectScript(chrome.extension.getURL('chrome/sendMessage.js'), 'body', { message: request.message })
+      injectScript(chrome.runtime.getURL('chrome/sendMessage.js'), 'body', { message: request.message })
     }
 
     if (request.sendFile) {
-      injectScript(chrome.extension.getURL('chrome/sendFile.js'), 'body')
+      injectScript(chrome.runtime.getURL('chrome/sendFile.js'), 'body')
     }
 
     if (request.logout) {
-      injectScript(chrome.extension.getURL('chrome/logout.js'), 'body')
+      injectScript(chrome.runtime.getURL('chrome/logout.js'), 'body')
     }
   })
-
-  // dom observer
-  let NEWEST = new Date().getTime()
-  const targetNode = document.body
-  var callback = function () {
-    const now = new Date().getTime()
-    if (now - NEWEST > 500) {
-      NEWEST = now
-      try {
-        setTimeout(() => {
-          getMessages()
-        }, 800)
-      } catch (e) {
-        if (
-          e.message.match(/Invocation of form runtime\.connect/) &&
-          e.message.match(/doesn't match definition runtime\.connect/)
-        ) {
-          console.error('Chrome extension, Actson has been reloaded. Please refresh the page')
-        } else {
-          throw e
-        }
-      }
-    }
-  }
-
-  const observer = new MutationObserver(callback)
-
-  observer.observe(targetNode, { attributes: true, childList: true, subtree: true, characterData: true })
 })
 
 function injectScript(filePath, tag, params) {

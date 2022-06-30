@@ -46,7 +46,7 @@
     )
   }
 
-  function callTabAndSendMessage(params, callback) {
+  const callTabAndSendMessage = (params, callback) => {
     chrome.windows.getAll(
       {
         populate: true
@@ -67,7 +67,7 @@
     )
   }
 
-  function callTabAndExecuteScript(file, callback) {
+  const callTabAndExecuteScript = (func, callback) => {
     chrome.windows.getAll(
       {
         populate: true
@@ -77,10 +77,10 @@
           win.tabs.forEach(tab => {
             if (/filehelper\.weixin\.qq\.com/gi.test(tab.url)) {
               hasOpenWx = true // already open wx
-              chrome.tabs.executeScript(
-                tab.id,
+              chrome.scripting.executeScript(
                 {
-                  file
+                  target: { tabId: tab.id },
+                  func
                 },
                 res => {
                   callback(res)
@@ -109,9 +109,24 @@
   }
 
   const checkLogin = () => {
+
+    // 获取页面状态
+    const getWxInfo = () => {
+      const loginDom = document.querySelector('.page-logined')
+      let isLogin = false
+      if (loginDom) {
+        isLogin = true
+      }
+
+      return {
+        isLogin
+      }
+    }
+
     return new Promise(resolve => {
-      callTabAndExecuteScript('chrome/wxInfo.js', res => {
-        const info = res[0]
+      callTabAndExecuteScript(getWxInfo, res => {
+        console.log('checkLogin:', res)
+        const info = res[0].result
         isLogin = info.isLogin
         resolve(isLogin)
       })
@@ -127,17 +142,52 @@
     window.close()
   }
 
+  const observe = () => {
+    callTabAndExecuteScript(() => {
+      let NEWEST = new Date().getTime()
+      const targetNode = document.querySelector('#chatBody')
+      const callback = function () {
+        const now = new Date().getTime()
+        if (now - NEWEST > 500) {
+          NEWEST = now
+          try {
+            setTimeout(() => {
+              console.log('observe chatBody changed.')
+              window.postMessage({ updateChatList: true }, '*')
+            }, 300)
+          } catch (e) {
+            if (
+              e.message.match(/Invocation of form runtime\.connect/) &&
+              e.message.match(/doesn't match definition runtime\.connect/)
+            ) {
+              console.error('Chrome extension, Actson has been reloaded. Please refresh the page.')
+            } else {
+              throw e
+            }
+          }
+        }
+      }
+
+      const observer = new MutationObserver(callback)
+
+      observer.observe(targetNode, { attributes: true, childList: true, subtree: true, characterData: true })
+    })
+  }
+
   onMount(async () => {
     const login = await checkLogin()
     if (login) {
       console.log('catchList')
 
       // 监听content script那边发送过来的数据（聊天列表）
-      chrome.runtime.onMessage.addListener(request => {
+      chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         chatList = request.chatList
+
+        sendResponse('popup page receive ok! request: ', request)
       })
 
       callTabAndSendMessage({ getChatList: true })
+      observe() // 监听聊天列表变动
     }
   })
 </script>
