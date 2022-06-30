@@ -2,7 +2,7 @@
   // @ts-nocheck
   import { onMount } from 'svelte'
 
-  let isLogin = true
+  let isLogin = false
   let hasOpenWx = false
   let message = ''
   let showMore = false

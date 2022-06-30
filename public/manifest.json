@@ -2,13 +2,14 @@
   "name": "微信文件传输",
   "manifest_version": 3,
   "version": "1.0.0",
+  "author": "Geocld<lijiahao5372@gmail.com>",
   "description": "更便捷的微信文件传输，可直接通过小窗口传输文件，让网页版更好用！",
   "icons": {
     "20": "images/20.png",
     "19": "images/20.png",
     "30": "images/20.png",
     "48": "images/20.png",
-    "128": "images/20.png"
+    "128": "images/128.png"
   },
   "background": {
     "service_worker": "background.js",
