@@ -2,7 +2,7 @@
   // @ts-nocheck
   import { onMount } from 'svelte'
 
-  let isLogin = false
+  let isLogin = true
   let hasOpenWx = false
   let message = ''
   let showMore = false
@@ -83,7 +83,7 @@
                   func
                 },
                 res => {
-                  callback(res)
+                  callback && callback(res)
                 }
               )
             }
@@ -102,6 +102,13 @@
       isSending = false
       message = ''
     })
+  }
+
+  const handleKeypress = (e) => {
+    if (!e) return
+    if (e.keyCode === 13) {
+      sendMessage()
+    }
   }
 
   const sendFile = () => {
@@ -247,9 +254,9 @@
         <div class="operations">
           <span class="icon-file" on:click={sendFile} />
         </div>
-        <textarea class="chat-input" bind:value={message} />
+        <textarea class="chat-input" bind:value={message} on:keypress={handleKeypress} />
         <div class="input-send">
-          <span class="btn {message.length || !isSending ? '' : 'btn-disabled'}" on:click={sendMessage}>
+          <span class="btn {message.length && !isSending ? '' : 'btn-disabled'}" on:click={sendMessage}>
             {isSending ? '发送中...' : '发送'}
           </span>
         </div>
